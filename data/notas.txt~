@@ -1,0 +1,38 @@
+NOTAS SOBRE TRATAMIENTO DE ARCHIVOS DE DATOS
+
+El archivo arbrat_viari.xml del proyecto OpenData BCN presenta dificultades 
+para leerlo. En principio, la codificación con la que está guardao está 
+equivocada, en el ficheo dice que es UTF-8 pero al tratar de leerlo con la 
+biblioteca xml.etree entrega error de codificación. Haciendo pruebas constato 
+que la codificación es ISO-8859-1. Para cambiar la codificación uso en el 
+terminal el comando
+
+iconv -f ISO-8859-1 -t UTF-8 -o newarbrat.xml arbrat_viari.xml
+
+Posteriormente me vuelve a dar error al tratar de leer el archivo y se debe a 
+que el archivo xml está mal formado. El mensaje entregado por el parser me dice 
+que el problema está en la línea 59378. Para mirar qué hay en esa línea uso el 
+comando
+
+sed -n '59377,59379p' newarbrat.xml
+
+Y me entrega las tres líneas pedidas:
+
+<cobertaEscocell>SENSE COBERTURA</cobertaEscocell> 
+<midaEscocell><=60 cm</midaEscocell> 
+<voraEscocell>SENSE VORA</voraEscocell>
+
+allí veo que el problema está en el símbolo <= que el parser toma como el 
+comienzo de un tag que no se cierra posteriormente. la solución pasa por 
+eliminar el símbolo. para hacerlo uso un script de python con el código 
+siguiente:
+
+import fileinput
+
+with fileinput.FileInput("newarbrat.xml", inplace=True, backup='.bak') as file:
+    for line in file:
+        print(line.replace(u"<=", u" "), end='')
+
+Con esto el símbolo es eliminado y el archivo puede ser leído por el parser.
+        
+        
